@@ -1,0 +1,58 @@
+# Dockerfile to build a container image to use Rust on top of RTEMS
+FROM ubuntu:24.04
+
+LABEL com.github.containers.toolbox="true" \
+      com.github.debarshiray.toolbox="true"
+
+RUN apt-get update && \
+    apt-get -y upgrade && \
+    apt-get install -y \
+        gawk \
+        wget \
+        git \
+        diffstat \
+        unzip \
+        texinfo \
+        gcc-multilib \
+        build-essential \
+        chrpath \
+        socat \
+        cpio \
+        python3 \
+        python3-pip \
+        python3-pexpect \
+        xz-utils \
+        debianutils \
+        iputils-ping \
+        python3-git \
+        python3-jinja2 \
+        libegl1-mesa \
+        libsdl1.2-dev \
+        pylint \
+        xterm \
+        python3-subunit \
+        mesa-common-dev \
+        zstd \
+        liblz4-tool && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Match UID/GID to standard Fedora user (1000)
+# Added to sudo group and fixed home directory setup
+RUN userdel -r ubuntu || \
+    useradd -u 1000 -U -c "RTEMS Developer" \
+            -G sudo -d "/home/thomas" --create-home "thomas" && \
+    mkdir -p /opt/rtems && \
+    chown thomas:thomas /opt/rtems && \
+    echo 'export PATH=/opt/rtems/7/bin:${PATH}' >> /home/thomas/.bashrc && \
+    export PS1="\[\033[01;34m\](podman) \[\033[00m\]\u@\h:\w\$ " >> /home/thomas/.bashrc
+
+# Allow sudo without password
+RUN echo "thomas ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+RUN touch /etc/localtime
+RUN echo VARIANT_ID=container >> /etc/os-release
+
+USER thomas
+WORKDIR /home/thomas
+CMD ["/bin/bash"]
